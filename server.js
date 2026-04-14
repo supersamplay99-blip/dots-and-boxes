@@ -29,23 +29,26 @@ wss.on('connection', (ws, req) => {
 
   rooms[room].push(ws);
   ws._role = rooms[room].length; // 1 ou 2
+  ws._name = '';
 
   // Informe le joueur de son rôle
   ws.send(JSON.stringify({ type: 'assign', role: ws._role, players: rooms[room].length }));
-
-  // Si deux joueurs → démarrer la partie
-  if (rooms[room].length === 2) {
-    rooms[room].forEach(client => {
-      client.send(JSON.stringify({ type: 'start' }));
-    });
-  }
 
   ws.on('message', (data) => {
     let msg;
     try { msg = JSON.parse(data); } catch { return; }
 
+    if (msg.type === 'join' && msg.name) {
+      ws._name = msg.name;
+      // Si les deux joueurs sont là et que le 2e vient d'envoyer son nom → démarrer
+      const clients = rooms[room];
+      if (clients && clients.length === 2 && clients.every(c => c._name)) {
+        clients[0].send(JSON.stringify({ type: 'start', opponentName: clients[1]._name }));
+        clients[1].send(JSON.stringify({ type: 'start', opponentName: clients[0]._name }));
+      }
+    }
+
     if (msg.type === 'move') {
-      // Relayer le coup à l'adversaire
       const opponent = rooms[room]?.find(c => c !== ws && c.readyState === 1);
       if (opponent) opponent.send(JSON.stringify(msg));
     }
