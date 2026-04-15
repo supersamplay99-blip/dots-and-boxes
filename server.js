@@ -48,7 +48,7 @@ wss.on('connection', (ws, req) => {
       }
     }
 
-    if (msg.type === 'move') {
+    if (msg.type === 'move' || msg.type === 'rematch_request' || msg.type === 'rematch_accept') {
       const opponent = rooms[room]?.find(c => c !== ws && c.readyState === 1);
       if (opponent) opponent.send(JSON.stringify(msg));
     }
