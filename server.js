@@ -40,11 +40,16 @@ wss.on('connection', (ws, req) => {
 
     if (msg.type === 'join' && msg.name) {
       ws._name = msg.name;
-      // Si les deux joueurs sont là et que le 2e vient d'envoyer son nom → démarrer
+      // Le créateur (role 1) envoie ses settings
+      if (ws._role === 1 && msg.settings) {
+        rooms[room]._settings = msg.settings;
+      }
+      // Si les deux joueurs sont là et ont leur nom → démarrer
       const clients = rooms[room];
       if (clients && clients.length === 2 && clients.every(c => c._name)) {
-        clients[0].send(JSON.stringify({ type: 'start', opponentName: clients[1]._name }));
-        clients[1].send(JSON.stringify({ type: 'start', opponentName: clients[0]._name }));
+        const settings = rooms[room]._settings || null;
+        clients[0].send(JSON.stringify({ type: 'start', opponentName: clients[1]._name, settings }));
+        clients[1].send(JSON.stringify({ type: 'start', opponentName: clients[0]._name, settings }));
       }
     }
 
